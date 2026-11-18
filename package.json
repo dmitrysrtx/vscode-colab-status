@@ -1,0 +1,59 @@
+{
+  "name": "colab-gpu-status",
+  "displayName": "Google Colab GPU Status",
+  "description": "Displays live Google Colab GPU and VRAM metrics in the VS Code status bar with one-click runtime provisioning and stop controls.",
+  "version": "0.1.0",
+  "publisher": "dmitrysrtx",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "colabStatus.clickStatus",
+        "title": "Colab Status: Refresh or Reconnect"
+      },
+      {
+        "command": "colabStatus.refresh",
+        "title": "Colab Status: Refresh Status"
+      },
+      {
+        "command": "colabStatus.provision",
+        "title": "Colab Status: Start Runtime"
+      },
+      {
+        "command": "colabStatus.stopSession",
+        "title": "Colab Status: Stop Session (Down)"
+      }
+    ],
+    "configuration": {
+      "title": "Colab GPU Status",
+      "properties": {
+        "colabStatus.colabPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the colab CLI executable. Leave empty to auto-detect from PATH or ~/.local/bin/colab."
+        },
+        "colabStatus.pythonPath": {
+          "type": "string",
+          "default": "python3",
+          "description": "Python executable used to run the bundled status query script."
+        },
+        "colabStatus.pollIntervalSeconds": {
+          "type": "number",
+          "default": 15,
+          "minimum": 5,
+          "description": "Polling interval in seconds for checking Colab session and VRAM status."
+        }
+      }
+    }
+  }
+}
