@@ -1,25 +1,58 @@
 {
   "name": "colab-gpu-status",
   "displayName": "Google Colab GPU Status",
-  "description": "Displays live Google Colab GPU and VRAM metrics in the VS Code status bar with one-click runtime provisioning and stop controls.",
-  "version": "0.1.0",
+  "description": "Native VS Code status bar extension for Google Colab: live GPU/VRAM metrics, Compute Units balance, and one-click GPU/TPU/CPU runtime provisioning and stop controls.",
+  "version": "0.2.0",
   "publisher": "dmitrysrtx",
   "license": "MIT",
+  "icon": "media/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dmitrysrtx/vscode-colab-status.git"
+  },
+  "homepage": "https://github.com/dmitrysrtx/vscode-colab-status#readme",
+  "bugs": {
+    "url": "https://github.com/dmitrysrtx/vscode-colab-status/issues"
+  },
+  "keywords": [
+    "colab",
+    "google colab",
+    "gpu",
+    "vram",
+    "tpu",
+    "cuda",
+    "nvidia",
+    "compute units",
+    "status bar",
+    "machine learning"
+  ],
   "engines": {
-    "vscode": "^1.75.0"
+    "vscode": "^1.85.0"
   },
   "categories": [
+    "Machine Learning",
+    "Data Science",
+    "Visualization",
     "Other"
   ],
   "activationEvents": [
     "onStartupFinished"
   ],
-  "main": "./extension.js",
+  "main": "./dist/extension.js",
+  "scripts": {
+    "build": "node esbuild.mjs --production",
+    "watch": "node esbuild.mjs --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run build:tests && node --test dist-test/test/**/*.test.js",
+    "build:tests": "tsc -p tsconfig.test.json",
+    "package": "npm run typecheck && npm run build && vsce package",
+    "vscode:prepublish": "npm run typecheck && npm run build"
+  },
   "contributes": {
     "commands": [
       {
         "command": "colabStatus.clickStatus",
-        "title": "Colab Status: Refresh or Reconnect"
+        "title": "Colab Status: Open Menu"
       },
       {
         "command": "colabStatus.refresh",
@@ -27,33 +60,137 @@
       },
       {
         "command": "colabStatus.provision",
-        "title": "Colab Status: Start Runtime"
+        "title": "Colab Status: Start Runtime..."
       },
       {
         "command": "colabStatus.stopSession",
-        "title": "Colab Status: Stop Session (Down)"
+        "title": "Colab Status: Stop Session"
+      },
+      {
+        "command": "colabStatus.openInBrowser",
+        "title": "Colab Status: Open Active Session in Browser"
+      },
+      {
+        "command": "colabStatus.signIn",
+        "title": "Colab Status: Sign In with Google"
+      },
+      {
+        "command": "colabStatus.signOut",
+        "title": "Colab Status: Sign Out"
+      },
+      {
+        "command": "colabStatus.openSettings",
+        "title": "Colab Status: Open Settings"
       }
     ],
     "configuration": {
-      "title": "Colab GPU Status",
+      "title": "Google Colab GPU Status",
       "properties": {
-        "colabStatus.colabPath": {
+        "colabStatus.authMode": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "oauth2",
+            "adc"
+          ],
+          "enumDescriptions": [
+            "Use stored Google OAuth session if signed in, otherwise fall back to gcloud Application Default Credentials (ADC).",
+            "Use native Google OAuth 2.0 flow stored in VS Code SecretStorage.",
+            "Use Google Application Default Credentials (gcloud auth application-default login)."
+          ],
+          "default": "auto",
+          "description": "Authentication strategy for Google Colab API requests."
+        },
+        "colabStatus.oauthClientId": {
           "type": "string",
           "default": "",
-          "description": "Path to the colab CLI executable. Leave empty to auto-detect from PATH or ~/.local/bin/colab."
+          "description": "Google OAuth 2.0 Desktop Client ID (used for Sign In with Google when oauthConfigPath is not set)."
         },
-        "colabStatus.pythonPath": {
+        "colabStatus.oauthClientSecret": {
           "type": "string",
-          "default": "python3",
-          "description": "Python executable used to run the bundled status query script."
+          "default": "",
+          "description": "Optional Google OAuth 2.0 Desktop Client Secret (required by Google Cloud Desktop OAuth clients)."
+        },
+        "colabStatus.oauthConfigPath": {
+          "type": "string",
+          "default": "",
+          "description": "Optional path to a Google OAuth 2.0 client JSON file (e.g. ~/.colab-cli-oauth-config.json or downloaded Desktop client JSON)."
+        },
+        "colabStatus.oauthScopes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "openid",
+            "https://www.googleapis.com/auth/userinfo.email"
+          ],
+          "description": "OAuth 2.0 scopes requested during Google Sign In."
         },
         "colabStatus.pollIntervalSeconds": {
           "type": "number",
           "default": 15,
           "minimum": 5,
-          "description": "Polling interval in seconds for checking Colab session and VRAM status."
+          "description": "Polling interval in seconds for checking Colab sessions, VRAM, and Compute Units."
+        },
+        "colabStatus.queryVram": {
+          "type": "boolean",
+          "default": true,
+          "description": "Query live GPU VRAM usage via nvidia-smi over the Colab Jupyter runtime proxy."
+        },
+        "colabStatus.showComputeUnits": {
+          "type": "boolean",
+          "default": true,
+          "description": "Fetch and display Colab Compute Units (CU) balance and hourly burn rate in the tooltip."
         }
       }
-    }
+    },
+    "walkthroughs": [
+      {
+        "id": "colabGpuStatus.gettingStarted",
+        "title": "Get Started with Google Colab GPU Status",
+        "description": "Monitor live Google Colab GPU VRAM, track Compute Units, and launch or stop runtimes directly from your status bar.",
+        "steps": [
+          {
+            "id": "signIn",
+            "title": "Connect your Google Colab account",
+            "description": "Sign in with Google OAuth (tokens are stored securely in VS Code SecretStorage) or automatically reuse existing `gcloud` Application Default Credentials.\n[Sign In with Google](command:colabStatus.signIn)",
+            "media": {
+              "image": "media/icon.png",
+              "altText": "Google Colab GPU Status icon"
+            }
+          },
+          {
+            "id": "launchRuntime",
+            "title": "Start or monitor a GPU / TPU / CPU runtime",
+            "description": "Click the status bar item or hover over it to launch T4, L4, A100, H100, G4, TPU v5e-1/v6e-1, or CPU runtimes (including High-RAM), open the active VM in your browser, or stop idle runtimes.\n[Start a Colab Runtime](command:colabStatus.provision)",
+            "media": {
+              "image": "media/icon.png",
+              "altText": "Google Colab runtime launcher"
+            }
+          },
+          {
+            "id": "configure",
+            "title": "Customize polling, VRAM, and Compute Units",
+            "description": "Adjust the status polling interval, toggle live `nvidia-smi` VRAM monitoring, or toggle Compute Units balance display in Settings.\n[Open Extension Settings](command:colabStatus.openSettings)",
+            "media": {
+              "image": "media/icon.png",
+              "altText": "Google Colab GPU Status settings"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "@types/vscode": "^1.85.0",
+    "@types/ws": "^8.5.14",
+    "@vscode/vsce": "^3.2.2",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.7.3"
   }
 }

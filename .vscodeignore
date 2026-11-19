@@ -1,0 +1,14 @@
+.vscode/**
+.github/**
+src/**
+test/**
+dist-test/**
+node_modules/**
+scripts/**
+**/*.ts
+**/*.map
+tsconfig*.json
+esbuild.mjs
+.gitignore
+*.vsix
+client_secret_*.json

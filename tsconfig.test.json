@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "dist-test",
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
+  },
+  "include": [
+    "src/colabClient.ts",
+    "src/jupyterVram.ts",
+    "src/authCore.ts",
+    "src/ui.ts",
+    "test/**/*.ts"
+  ],
+  "exclude": ["node_modules", "dist", "dist-test"]
+}
