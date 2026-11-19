@@ -2,6 +2,11 @@
 
 All notable changes to **Google Colab GPU Status** are documented in this file.
 
+## [0.2.1] - 2026-11-19
+
+### Changed
+- Dedicated production Google OAuth 2.0 Desktop client credentials configured for one-click sign-in.
+
 ## [0.2.0] - 2026-11-19
 
 ### Added

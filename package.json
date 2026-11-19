@@ -2,7 +2,7 @@
   "name": "colab-gpu-status",
   "displayName": "Google Colab GPU Status",
   "description": "Native VS Code status bar extension for Google Colab: live GPU/VRAM metrics, Compute Units balance, and one-click GPU/TPU/CPU runtime provisioning and stop controls.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "publisher": "dmitrysrtx",
   "license": "MIT",
   "icon": "media/icon.png",
