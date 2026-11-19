@@ -70,26 +70,25 @@ jobs:
           files: ${{ steps.vsix.outputs.file }}
           generate_release_notes: true
 
-      - name: Publish to VS Code Marketplace (Trusted Publishing / OIDC)
-        if: >-
-          (startsWith(github.ref, 'refs/tags/v') || inputs.publish == true) &&
-          secrets.VSCE_PAT == ''
-        run: npx @vscode/vsce@latest publish --oidc --packagePath "${{ steps.vsix.outputs.file }}"
-
-      - name: Publish to VS Code Marketplace (PAT fallback)
-        if: >-
-          (startsWith(github.ref, 'refs/tags/v') || inputs.publish == true) &&
-          secrets.VSCE_PAT != ''
+      - name: Publish to VS Code Marketplace
+        if: startsWith(github.ref, 'refs/tags/v') || inputs.publish == true
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
-        run: npx @vscode/vsce@latest publish --packagePath "${{ steps.vsix.outputs.file }}"
+        run: |
+          if [ -n "$VSCE_PAT" ]; then
+            npx @vscode/vsce@latest publish --packagePath "${{ steps.vsix.outputs.file }}"
+          else
+            npx @vscode/vsce@latest publish --oidc --packagePath "${{ steps.vsix.outputs.file }}"
+          fi
 
       - name: Publish to Open VSX Registry
-        if: >-
-          (startsWith(github.ref, 'refs/tags/v') || inputs.publish == true) &&
-          secrets.OVSX_PAT != ''
+        if: startsWith(github.ref, 'refs/tags/v') || inputs.publish == true
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
         run: |
-          npx ovsx create-namespace dmitrysrtx -p "$OVSX_PAT" || true
-          npx ovsx publish "${{ steps.vsix.outputs.file }}" -p "$OVSX_PAT"
+          if [ -n "$OVSX_PAT" ]; then
+            npx ovsx create-namespace dmitrysrtx -p "$OVSX_PAT" || true
+            npx ovsx publish "${{ steps.vsix.outputs.file }}" -p "$OVSX_PAT"
+          else
+            echo "OVSX_PAT secret not set; skipping Open VSX publish."
+          fi
