@@ -10,5 +10,6 @@ scripts/**
 tsconfig*.json
 esbuild.mjs
 .gitignore
+AGENTS.md
 *.vsix
 client_secret_*.json
