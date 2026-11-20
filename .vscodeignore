@@ -11,5 +11,6 @@ tsconfig*.json
 esbuild.mjs
 .gitignore
 AGENTS.md
+ROADMAP.md
 *.vsix
 client_secret_*.json
